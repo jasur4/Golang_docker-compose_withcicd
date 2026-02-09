@@ -7,7 +7,7 @@ import (
 
 func main() {
         http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-                fmt.Fprintf(w, "Hello, I am updated Go launched with Docker-Compose!")
+                fmt.Fprintf(w, "Hello, I am updated Go launched with Docker-Compose! Now, updated one more time!!!")
         })
 
         http.HandleFunc("/greet/", func(w http.ResponseWriter, r *http.Request) {
