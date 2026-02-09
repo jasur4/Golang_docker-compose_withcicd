@@ -1,0 +1,58 @@
+name: Go CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.actor }}/golang_docker-comp
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      # Шаг 1: Проверяем код
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+
+      # Шаг 3: Сборка Docker образа
+      - name: Build Docker image
+        run: docker build -t $IMAGE_NAME:latest .
+
+      # Шаг 4: Пуш Docker образа
+      - name: Push Docker image
+        run: docker push $IMAGE_NAME:latest
+
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: SSH into server and deploy via docker-compose
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            export GITHUB_REPOSITORY_OWNER=${{ github.repository_owner }}
+
+            cd /opt/go-app || exit 1
+
+            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+
+            docker-compose pull
+            docker-compose down
+            docker-compose up -d
