@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/golang_docker-comp
+  IMAGE_NAME: ghcr.io/${{ github.actor }}/golang_docker-comp
 
 jobs:
   build-and-test:
