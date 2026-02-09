@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.actor }}/golang_docker-comp
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/golang_docker-comp
 
 jobs:
   build-and-test:
@@ -18,13 +18,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Шаг 2: Логин в GitHub Container Registry через PAT
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
-
 
       # Шаг 3: Сборка Docker образа
       - name: Build Docker image
@@ -35,12 +35,12 @@ jobs:
         run: docker push $IMAGE_NAME:latest
 
   deploy:
-    name: Deploy to Server
+    name: Deploy to Server via docker-compose
     runs-on: ubuntu-latest
     needs: build-and-test
 
     steps:
-      - name: SSH into server and deploy via docker-compose
+      - name: SSH into server and deploy
         uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -49,10 +49,12 @@ jobs:
           script: |
             export GITHUB_REPOSITORY_OWNER=${{ github.repository_owner }}
 
+            # Переходим в папку с docker-compose.yml
             cd /opt/go-app || exit 1
 
-            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+            # Логинимся в GHCR через PAT
+            echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+            # Скачиваем новый образ и перезапускаем контейнер
             docker-compose pull
-            docker-compose down
-            docker-compose up -d
+            docker-compose up -d --force-recreate
