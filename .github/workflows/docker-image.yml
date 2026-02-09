@@ -35,7 +35,7 @@ jobs:
         run: docker push $IMAGE_NAME:latest
 
   deploy:
-    name: Deploy to Server via docker-compose
+    name: Deploy to Server via docker compose V2
     runs-on: ubuntu-latest
     needs: build-and-test
 
@@ -55,6 +55,7 @@ jobs:
             # Логинимся в GHCR через PAT
             echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Скачиваем новый образ и перезапускаем контейнер
-            docker-compose pull
-            docker-compose up -d --force-recreate
+            # Используем Compose V2 (docker compose без дефиса)
+            docker compose pull
+            docker compose up -d --force-recreate
+
